@@ -1,0 +1,16 @@
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.csprojAssemblyReference.cache
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.AssemblyInfoInputs.cache
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.AssemblyInfo.cs
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.csproj.CoreCompileInputs.cache
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.exe
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.deps.json
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.runtimeconfig.json
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.runtimeconfig.dev.json
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.dll
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\AnonServer.pdb
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\UnityEngine.dll
+E:\CSharpProjects\AnonSocket\AnonServer\bin\Debug\netcoreapp3.1\UnityEngine.xml
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.csproj.CopyComplete
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.dll
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.pdb
+E:\CSharpProjects\AnonSocket\AnonServer\obj\Debug\netcoreapp3.1\AnonServer.genruntimeconfig.cache
