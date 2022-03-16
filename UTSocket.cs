@@ -67,6 +67,7 @@ namespace AnonSocket
         }
         public void Dispose()
         {
+            AnonSocketUtil.Debug("关闭了服务器！！！！！！！！！！");
             _tcpSocket.Close();
             _udpSocket.Close();
         }

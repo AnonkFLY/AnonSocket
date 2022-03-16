@@ -33,7 +33,6 @@ namespace AnonSocket.AnonServer
     {
         public delegate void ReceiveClientMessage(ClientData data);
         private Socket _serverTCPSocket;
-        private Socket _serverUDPSocket;
         private EndPoint _tcpEndPoint;
         private EndPoint _udpEndPoint;
         private PacketBuffer _buffer;
@@ -43,9 +42,8 @@ namespace AnonSocket.AnonServer
         private int _index;
         private int _bufferSize;
         public Socket ServerTCPSocket { get => _serverTCPSocket; }
-        public Socket ServerUDPSocket { get => _serverUDPSocket; }
         public EndPoint TcpEndPoint { get => _tcpEndPoint; }
-        public EndPoint UdpEndPoint { get => _udpEndPoint;  }
+        public EndPoint UdpEndPoint { get => _udpEndPoint; }
         public PacketHandler<ClientData> PacketHandler { get => _packetHandler; set => _packetHandler = value; }
 
         public ReceiveClientMessage onReceiveMessage;
@@ -64,36 +62,35 @@ namespace AnonSocket.AnonServer
             InitSocket(socket);
             TCPReceiveData();
         }
-        public void InitClientUDP(EndPoint endPoint, Socket serverSocket)
+        public void InitClientUDP(EndPoint endPoint)
         {
-            _serverUDPSocket = serverSocket;
             _udpEndPoint = endPoint;
-            UDPReceiveData();
         }
-        private void UDPReceiveData()
-        {
-            AnonSocketUtil.Debug($"尝试从:{UdpEndPoint}获取UDP数据");
-            _serverUDPSocket.BeginReceiveFrom(_buff, 0, _buff.Length, SocketFlags.None, ref _udpEndPoint, UDPEndReceive, _serverUDPSocket);
-        }
+        //private void UDPReceiveData()
+        //{
+        //    //AnonSocketUtil.Debug($"尝试从:{UdpEndPoint}获取UDP数据");
+        //    _serverUDPSocket.BeginReceiveFrom(_buff, 0, _buff.Length, SocketFlags.None, ref _udpEndPoint, UDPEndReceive, _serverUDPSocket);
+        //}
 
-        private void UDPEndReceive(IAsyncResult ar)
-        {
-            try
-            {
-                Socket socket = (Socket)ar.AsyncState;
-                var receiveCount = socket.EndReceiveFrom(ar, ref _udpEndPoint);
-                _buffer.WriteBuffer(_buff, 0, receiveCount);
-                PacketBase packet = new PacketBase(_buffer.Buffer);
+        //private void UDPEndReceive(IAsyncResult ar)
+        //{
+        //    try
+        //    {
+        //        Socket socket = (Socket)ar.AsyncState;
+        //        var receiveCount = socket.EndReceiveFrom(ar, ref _udpEndPoint);
+        //        _buffer.WriteBuffer(_buff, 0, receiveCount);
+        //        PacketBase packet = new PacketBase(_buffer.Buffer);
 
-                _server.onReceiveUDPMessage?.Invoke(this, _index);
-                onReceiveMessage?.Invoke(new ClientData(this, packet, _buffer, receiveCount));
-                UDPReceiveData();
-            }
-            catch (Exception e)
-            {
-                AnonSocketUtil.Debug($"UDP发送失败{UdpEndPoint},Error:{e}");
-            }
-        }
+        //        _server.onReceiveUDPMessage?.Invoke(this, _index);
+        //        onReceiveMessage?.Invoke(new ClientData(this, packet, _buffer, receiveCount));
+        //        if (_serverUDPSocket != null)
+        //            UDPReceiveData();
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        AnonSocketUtil.Debug($"UDP接收失败{UdpEndPoint},Error:{e}");
+        //    }
+        //}
 
         private void TCPReceiveData()
         {
@@ -115,33 +112,42 @@ namespace AnonSocket.AnonServer
             }
             catch (Exception e)
             {
-                AnonSocketUtil.Debug($"客户端{_tcpEndPoint}断开连接,Error:{e}");
+                AnonSocketUtil.Debug($"客户端[{_index}]:{_tcpEndPoint}断开连接,Error:{e}");
                 Disconnect();
             }
+        }
+        public void RecevieUDPData(byte[] buffer, int receiveCount)
+        {
+            _buffer.WriteBuffer(buffer, 0, receiveCount);
+            PacketBase packet = new PacketBase(_buffer.Buffer);
+            _server.onReceiveUDPMessage?.Invoke(this, _index);
+            onReceiveMessage?.Invoke(new ClientData(this, packet, _buffer, receiveCount));
         }
 
 
         public bool SendMessage(MessageData data)
         {
+            bool isTCP = data.packetData.OnTCPConnect(true);
             //Send Message
             try
             {
-                if (data.packetData.OnTCPConnect(true))
+                if (isTCP)
                 {
-                    var buffer = data.packetData.ReadBuffer();
-                    AnonSocketUtil.Debug("on send data... on tcp");
+                    var buffer = data.packetData.ReadBuffers();
+                    //AnonSocketUtil.Debug("on send data... on tcp");
                     _serverTCPSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, TCPEndSend, _serverTCPSocket);
+                    data.packetData.ResetIndex();
                 }
                 else
                 {
-                    AnonSocketUtil.Debug($"on send data... on udp ep is {UdpEndPoint}");
+                    AnonSocketUtil.SubcontractSend(data.serverSocket, data.packetData, _udpEndPoint, UDPEndSend, _bufferSize);
+                    //AnonSocketUtil.Debug($"on send data... on udp ep is {UdpEndPoint}");
                     //data.serverSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, _udpEndPoint, UDPEndSend, data.serverSocket);
-                    AnonSocketUtil.SubcontractSend(data.serverSocket, data.packetData, UdpEndPoint, UDPEndSend, _bufferSize);
                 }
             }
             catch (Exception e)
             {
-                AnonSocketUtil.Debug($"client{_tcpEndPoint}disconnected... on {e}");
+                AnonSocketUtil.Debug($"client {_tcpEndPoint} disconnected... on sendMessage type is [{(isTCP ? ProtocolType.Tcp : ProtocolType.Udp)}] {e}");
                 return false;
             }
             return true;
@@ -150,10 +156,11 @@ namespace AnonSocket.AnonServer
         {
             _serverTCPSocket?.Close();
             _serverTCPSocket = null;
-            _serverUDPSocket?.Close();
-            _serverUDPSocket = null;
-            _udpEndPoint = null;
+            //_serverUDPSocket?.Close();
+            //_serverUDPSocket = null;
+            //_udpEndPoint = null;
             _tcpEndPoint = null;
+            _index = -1;
         }
 
 
@@ -172,13 +179,13 @@ namespace AnonSocket.AnonServer
         {
             Socket client = (Socket)result.AsyncState;
             var count = client.EndSendTo(result);
-            AnonSocketUtil.Debug($"End TCP Send...{count}");
+            //AnonSocketUtil.Debug($"End TCP Send...{count}");
         }
         private void UDPEndSend(IAsyncResult result)
         {
             Socket server = (Socket)result.AsyncState;
             var count = server.EndSendTo(result);
-            AnonSocketUtil.Debug($"End UDP Send...{count}");
+            //AnonSocketUtil.Debug($"End UDP Send...{count}");
         }
         private void Disconnect()
         {
@@ -189,12 +196,10 @@ namespace AnonSocket.AnonServer
         {
             var packet = data.packet;
             var buffer = data.buffer;
-            var receiveCount = data.receiveCount;
-            var id = packet.PacketID;
             var length = packet.Length;
             if (buffer.Index < length)
             {
-                AnonSocketUtil.Debug($"包过大,尝试分包:包长{length},收到包{receiveCount}");
+                //AnonSocketUtil.Debug($"包过大,尝试分包:包长{length},收到包{data.receiveCount},缓冲区{buffer.Index}");
                 return;
             }
             buffer.ResetBuffer(length);

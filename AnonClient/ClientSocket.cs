@@ -15,7 +15,8 @@ namespace AnonSocket.AnonClient
         private PacketHandler<PacketBase> _packetHandler;
 
         public event Action<IPAddress> onBeginConnect;                        //尝试连接服务器
-        public event Action<ClientSocket> onEndConnected;                     //连接成功
+        public event Action<ClientSocket> onEndTCPConnect;                     //连接成功
+        public event Action<ClientSocket> onEndUDPConnect;
         public event Action<ClientSocket, Exception> onConnectionFailed;       //连接失败或断开连接
         /// <summary>
         /// UDP数据发送失败
@@ -66,7 +67,6 @@ namespace AnonSocket.AnonClient
             onReceivePacket = new Action<PacketBase, PacketBuffer, int>(ClientDefaultHandler);
 
             _packetHandler.RegisterHandler(0, UDPConnect);
-            //Debug code
         }
         /// <summary>
         /// 尝试连接服务器
@@ -96,10 +96,11 @@ namespace AnonSocket.AnonClient
         {
             try
             {
-                var buffer = packet.ReadBuffer();
+                var buffer = packet.ReadBuffers();
                 //AnonSocketUtil.Debug("on send data... use tcp");
                 _utSocket.TcpSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, TCPEndSend, _utSocket.TcpSocket);
             }
+            //Debug code
             catch (Exception e)
             {
                 onTCPSendFailed?.Invoke(this, e);
@@ -140,7 +141,7 @@ namespace AnonSocket.AnonClient
                 //TCP Connect
                 client.EndConnect(result);
                 AnonSocketUtil.Debug("On connected!");
-                onEndConnected?.Invoke(this);
+                onEndTCPConnect?.Invoke(this);
 
                 //UDP Connect
                 //UDPConnect();
@@ -158,6 +159,9 @@ namespace AnonSocket.AnonClient
         private void UDPConnect(PacketBase packet)
         {
             //Send index packet
+            AnonSocketUtil.Debug($"on ConnectUDP");
+            onEndUDPConnect?.Invoke(this);
+
             int index = packet.ReadInt32();
             SendMessage(packet);
         }
@@ -168,7 +172,8 @@ namespace AnonSocket.AnonClient
             try
             {
                 _utSocket.TcpSocket.BeginReceive(_buff, 0, _buff.Length, SocketFlags.None, TCPEndReceive, _utSocket.TcpSocket.RemoteEndPoint);
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 onTCPReceiveFailed?.Invoke(this, e);
             }
@@ -239,10 +244,10 @@ namespace AnonSocket.AnonClient
         {
             var id = packet.PacketID;
             var length = packet.Length;
-            AnonSocketUtil.Debug($"收到包长为{length},收到数据长度{receiveCount}");
+            //AnonSocketUtil.Debug($"收到包长为{length},收到数据长度{receiveCount}");
             if (buffer.Index < length)
             {
-                AnonSocketUtil.Debug($"包过大,尝试分包:包长{length},收到包{receiveCount}");
+                //AnonSocketUtil.Debug($"包过大,尝试分包:包长{length},收到包{receiveCount}");
                 return;
             }
             buffer.ResetBuffer(length);

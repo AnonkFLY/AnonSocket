@@ -52,6 +52,7 @@ namespace AnonSocket.Data
             var length = _buffer.Length;
             var tempBuffer = new byte[length];//[1,2,3,4,5,0,0,0]; _index = 5 reserve = 3;
             length -= packetHead;
+            AnonSocketUtil.Debug($"尝试重置长度，原长度{length+packetHead},现长度{length},PacketHead{packetHead}");
             Array.Copy(_buffer, packetHead, tempBuffer, 0, length);
             _index -= packetHead;
             _reserve += packetHead;

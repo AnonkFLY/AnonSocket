@@ -30,21 +30,22 @@ namespace AnonSocket
             
             if (packet.Length <= subcontractSize)
             {
-                var buff = packet.ReadBuffer();
+                var buff = packet.ReadBuffers();
                 socket.BeginSendTo(buff, 0, buff.Length, SocketFlags.None, endPoint, callback, socket);
                 return;
             }
-            AnonSocketUtil.Debug($"包过大，尝试分包发送{packet.Length}");
-            int bufferSize;
+            //Debug($"包过大，尝试分包发送{packet.Length}");
+            byte[] buffer;
             do
             {
                 //写入
-                var buffer = packet.ReadBuffer(subcontractSize);
+                buffer = packet.ReadBuffers(subcontractSize);
+                if (buffer.Length == 0)
+                    break;
                 socket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, endPoint, callback, socket);
-                bufferSize = buffer.Length;
-                AnonSocketUtil.Debug($"读出{buffer.Length}并发送,剩余{bufferSize}");
-            } while (bufferSize > 0);
-
+                //Debug($"读出{buffer.Length}并发送,剩余{bufferSize}");
+            } while (true);
+            packet.ResetIndex();
         }
     }
 }

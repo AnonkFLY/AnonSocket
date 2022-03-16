@@ -13,7 +13,7 @@ namespace AnonSocket.Data
         private int _index;
         private int _length;
         protected byte[] _datas;
-        protected byte[] _buffer;
+        //protected byte[] _buffer;
 
         public int PacketID { get => _packetID; }
         public int Length { get => _length; }
@@ -29,7 +29,6 @@ namespace AnonSocket.Data
         public PacketBase(byte[] data)
         {
             _index = 0;
-            _buffer = data;
             _datas = data;
             _packetID = ReadInt32();
             _length = ReadInt32();
@@ -155,11 +154,11 @@ namespace AnonSocket.Data
             _length += len;
         }
         /// <summary>
-        /// 
+        /// ReadBuffers
         /// </summary>
         /// <param name="size">-1 is read reserve</param>
         /// <returns></returns>
-        public byte[] ReadBuffer(int size = -1)
+        public byte[] ReadBuffers(int size = -1)
         {
             if (size == -1)
             {
@@ -170,10 +169,14 @@ namespace AnonSocket.Data
                 size = Math.Min(size, _length - _index);
             }
             SetPacketLength(_length);
-            _buffer = new byte[size];
+            var _buffer = new byte[size];
             Array.Copy(_datas, _index, _buffer, 0, size);
             FillBuffer(size);
             return _buffer;
+        }
+        public void ResetIndex()
+        {
+            _index = 0;
         }
         public void SetTCPPacket()
         {

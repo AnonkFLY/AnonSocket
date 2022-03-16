@@ -18,15 +18,15 @@ namespace AnonSocket
         }
         public void RegisterHandler(int packetID, PacketProcessingEvents handler)
         {
-            AnonSocketUtil.Debug($"尝试注册id:{packetID}的处理");
+            //AnonSocketUtil.Debug($"尝试注册id:{packetID}的处理");
             if (packetID < 0)
             {
-                AnonSocketUtil.Debug($"尝试注册TCP协议,id:{-packetID - 1}");
+                //AnonSocketUtil.Debug($"尝试注册TCP协议,id:{-packetID - 1}");
                 SetProcessingEvents(ref _packetTCPProcessingEvents, -packetID - 1, handler);
             }
             else if (packetID > 0)
             {
-                AnonSocketUtil.Debug($"尝试注册UDP协议,id:{packetID - 1}");
+                //AnonSocketUtil.Debug($"尝试注册UDP协议,id:{packetID - 1}");
                 SetProcessingEvents(ref _packetUDPProcessingEvents, packetID - 1, handler);
             }
             else
@@ -49,15 +49,15 @@ namespace AnonSocket
         {
             if (id < 0)
             {
-                AnonSocketUtil.Debug("获得TCP数据包" + id);
-                return _packetTCPProcessingEvents[-id-1];
+                //AnonSocketUtil.Debug("获得TCP数据包" + id);
+                return _packetTCPProcessingEvents[-id - 1];
             }
             else if (id > 0)
             {
-                AnonSocketUtil.Debug("获得UDP数据包" + id);
-                return _packetUDPProcessingEvents[id-1];
+                //AnonSocketUtil.Debug("获得UDP数据包" + id);
+                return _packetUDPProcessingEvents[id - 1];
             }
-            AnonSocketUtil.Debug("获得连接数据包");
+            //AnonSocketUtil.Debug("获得连接数据包");
             return _onConnectEvents;
         }
         private void SetProcessingEvents(ref PacketProcessingEvents[] packetProcessingEvents, int index, PacketProcessingEvents handler)
