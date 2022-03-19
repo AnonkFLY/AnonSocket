@@ -10,7 +10,15 @@ namespace AnonSocket.Data
         private int _index;
         private int _reserve;
 
-        public byte[] Buffer { get => _buffer; }
+        public byte[] Buffer
+        {
+            get
+            {
+                var temp = new byte[_index];
+                Array.Copy(_buffer, 0, temp, 0, _index);
+                return temp;
+            }
+        }
         public int Index { get => _index; }
 
         public PacketBuffer(int bufferSize)
@@ -28,6 +36,7 @@ namespace AnonSocket.Data
 
         public void WriteBuffer(byte[] buffer, int offset, int length)
         {
+
             if (_reserve >= length)
             {
                 Array.Copy(buffer, offset, _buffer, _index, length);
@@ -42,6 +51,8 @@ namespace AnonSocket.Data
             }
             _index += length;
             _reserve = _buffer.Length - Index;
+            var buff = Buffer;
+
         }
         public void WriteBuffer(byte[] buffer)
         {
@@ -49,13 +60,23 @@ namespace AnonSocket.Data
         }
         public void ResetBuffer(int packetHead)
         {
-            var length = _buffer.Length;
-            var tempBuffer = new byte[length];//[1,2,3,4,5,0,0,0]; _index = 5 reserve = 3;
-            length -= packetHead;
-            AnonSocketUtil.Debug($"尝试重置长度，原长度{length+packetHead},现长度{length},PacketHead{packetHead}");
-            Array.Copy(_buffer, packetHead, tempBuffer, 0, length);
-            _index -= packetHead;
-            _reserve += packetHead;
+            if (packetHead > _index)
+                AnonSocketUtil.Debug("Error:PacketBuffer读取过长！！");
+            var length = _buffer.Length; //[1,2,3,4,5,0,0,0,0,0,0]; _index = 5 reserve = 6;  packetHead = 4;
+            var tempBuffer = new byte[length];  //[0,0,0,0,0,0,0,0,0,0,0]; length = 11;
+            _index -= packetHead;  //1
+            Array.Copy(_buffer, packetHead, tempBuffer, 0, _index); //temp: [5,0,0,0,0,0,0,0,0,0,0]
+
+            _buffer = tempBuffer;
+            _reserve = _buffer.Length - _index;
+            //var length = _buffer.Length;
+            //var tempBuffer = new byte[length];
+            //length -= packetHead;
+            //Array.Copy(_buffer, packetHead, tempBuffer, 0, length);
+            //_buffer = tempBuffer;
+            //_index -= packetHead;
+            //_reserve += packetHead;
+            //AnonSocketUtil.Debug($"尝试重置长度，原长度{length+packetHead},现长度{length},PacketHead{packetHead}");
         }
     }
 }

@@ -49,15 +49,15 @@ namespace AnonSocket
         {
             if (id < 0)
             {
-                //AnonSocketUtil.Debug("获得TCP数据包" + id);
+                AnonSocketUtil.Debug("获得TCP数据包" + id);
                 return _packetTCPProcessingEvents[-id - 1];
             }
             else if (id > 0)
             {
-                //AnonSocketUtil.Debug("获得UDP数据包" + id);
+                AnonSocketUtil.Debug("获得UDP数据包" + id);
                 return _packetUDPProcessingEvents[id - 1];
             }
-            //AnonSocketUtil.Debug("获得连接数据包");
+            AnonSocketUtil.Debug("获得连接数据包");
             return _onConnectEvents;
         }
         private void SetProcessingEvents(ref PacketProcessingEvents[] packetProcessingEvents, int index, PacketProcessingEvents handler)
@@ -73,6 +73,19 @@ namespace AnonSocket
             }
             packetProcessingEvents[index] = handler;
             //AnonSocketUtil.Debug($"UDP长度{_packetUDPProcessingEvents.Length},TCP长度:{_packetTCPProcessingEvents.Length}");
+        }
+        public void ClearProcessingHandler(int index)
+        {
+            if (index < 0)
+            {
+                _packetTCPProcessingEvents[-index - 1] = null;
+            }
+            else if (index > 0)
+            {
+                _packetUDPProcessingEvents[index - 1] = null;
+            }
+            else
+                _onConnectEvents = null;
         }
     }
 }

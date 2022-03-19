@@ -37,6 +37,7 @@ namespace AnonSocket.AnonServer
         public Action<Client, int> onReceiveUDPMessage;
         public List<Client> Clients { get => _clients; }
         public List<Client> ClientBufferPool { get => _clientBufferPool; }
+        public UTSocket UtSocket { get => _utSocket; set => _utSocket = value; }
 
         public ServerSocket(int maxCnt, int tcpPort, int udpPort, int bufferSize = 512)
         {
@@ -86,10 +87,7 @@ namespace AnonSocket.AnonServer
         {
             Clients.ForEach(client =>
             {
-                MessageData messageData = new MessageData();
-                messageData.serverSocket = packet.PacketID < 0 ? _utSocket.TcpSocket : _utSocket.UdpSocket;
-                messageData.packetData = packet;
-                client.SendMessage(messageData);
+                client.SendMessage(packet);
             });
         }
         /// <summary>
@@ -102,7 +100,7 @@ namespace AnonSocket.AnonServer
             var clientSocket = serverSocket.EndAccept(result);
             EndPoint iPEndPoint = clientSocket.RemoteEndPoint;
             serverSocket.BeginAccept(OnAccept, serverSocket);
-            var client = GetNewClient(clientSocket, this);
+            var client = GetNewClient(clientSocket);
             var index = _clients.Count;
             Clients.Add(client);
 
@@ -110,14 +108,14 @@ namespace AnonSocket.AnonServer
 
             onClientConnet?.Invoke(client, index);
         }
-        private Client GetNewClient(Socket socket, ServerSocket server)
+        private Client GetNewClient(Socket socket)
         {
-            return new Client(socket, _clients.Count, server, _bufferSize);
+            return new Client(_clients.Count, this, socket, _bufferSize);
             if (ClientBufferPool.Count == 0)
-                return new Client(socket, _clients.Count, server, _bufferSize);
+                return new Client( _clients.Count, this, socket, _bufferSize);
             int index = ClientBufferPool.Count - 1;
             var result = ClientBufferPool[index];
-            result.InitClient(socket, _clients.Count);
+            result.InitClient(this, _clients.Count,socket);
             ClientBufferPool.RemoveAt(index);
             return result;
         }
@@ -170,7 +168,7 @@ namespace AnonSocket.AnonServer
         {
             var packet = new PacketBase(0);
             packet.Write(index);
-            client.SendMessage(new MessageData(packet, _utSocket.TcpSocket));
+            client.SendMessage(packet);
         }
         private void StartUDPReceive()
         {

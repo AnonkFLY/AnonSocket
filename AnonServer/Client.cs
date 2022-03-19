@@ -33,6 +33,7 @@ namespace AnonSocket.AnonServer
     {
         public delegate void ReceiveClientMessage(ClientData data);
         private Socket _serverTCPSocket;
+        private Socket _serverUDPSocket;
         private EndPoint _tcpEndPoint;
         private EndPoint _udpEndPoint;
         private PacketBuffer _buffer;
@@ -48,18 +49,18 @@ namespace AnonSocket.AnonServer
 
         public ReceiveClientMessage onReceiveMessage;
 
-        public Client(Socket socket, int index, ServerSocket server, int bufferSize = 512)
+        public Client(int index, ServerSocket server,Socket clientSocket, int bufferSize = 512)
         {
             onReceiveMessage = new ReceiveClientMessage(ClientDefaultHandler);
             PacketHandler = new PacketHandler<ClientData>();
             _server = server;
             InitBuffers(bufferSize);
-            InitClient(socket, index);
+            InitClient(server, index,clientSocket);
         }
-        public void InitClient(Socket socket, int index)
+        public void InitClient(ServerSocket server, int index,Socket clientSocket)
         {
             _index = index;
-            InitSocket(socket);
+            InitSocket(server,clientSocket);
             TCPReceiveData();
         }
         public void InitClientUDP(EndPoint endPoint)
@@ -106,6 +107,7 @@ namespace AnonSocket.AnonServer
                 _buffer.WriteBuffer(_buff, 0, receiveCount);
                 PacketBase packet = new PacketBase(_buffer.Buffer);
 
+
                 _server.onReceiveTCPMessage?.Invoke(this, _index);
                 onReceiveMessage?.Invoke(new ClientData(this, packet, _buffer, receiveCount));
                 TCPReceiveData();
@@ -125,22 +127,22 @@ namespace AnonSocket.AnonServer
         }
 
 
-        public bool SendMessage(MessageData data)
+        public IAsyncResult SendMessage(PacketBase packet)
         {
-            bool isTCP = data.packetData.OnTCPConnect(true);
+            bool isTCP = packet.OnTCPConnect(true);
             //Send Message
             try
             {
                 if (isTCP)
                 {
-                    var buffer = data.packetData.ReadBuffers();
+                    var buffer = packet.ReadBytes();
                     //AnonSocketUtil.Debug("on send data... on tcp");
-                    _serverTCPSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, TCPEndSend, _serverTCPSocket);
-                    data.packetData.ResetIndex();
+                    packet.ResetIndex();
+                    return _serverTCPSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, TCPEndSend, _serverTCPSocket);
                 }
                 else
                 {
-                    AnonSocketUtil.SubcontractSend(data.serverSocket, data.packetData, _udpEndPoint, UDPEndSend, _bufferSize);
+                    return AnonSocketUtil.SubcontractSend(_serverUDPSocket, packet, _udpEndPoint, UDPEndSend, _bufferSize);
                     //AnonSocketUtil.Debug($"on send data... on udp ep is {UdpEndPoint}");
                     //data.serverSocket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, _udpEndPoint, UDPEndSend, data.serverSocket);
                 }
@@ -148,9 +150,8 @@ namespace AnonSocket.AnonServer
             catch (Exception e)
             {
                 AnonSocketUtil.Debug($"client {_tcpEndPoint} disconnected... on sendMessage type is [{(isTCP ? ProtocolType.Tcp : ProtocolType.Udp)}] {e}");
-                return false;
+                return null;
             }
-            return true;
         }
         private void DisposableClient()
         {
@@ -164,10 +165,11 @@ namespace AnonSocket.AnonServer
         }
 
 
-        private void InitSocket(Socket socket)
+        private void InitSocket(ServerSocket server,Socket clientSocket)
         {
-            _serverTCPSocket = socket ?? throw new ArgumentNullException(nameof(socket));
-            _tcpEndPoint = socket.RemoteEndPoint;
+            _serverTCPSocket = clientSocket;
+            _serverUDPSocket = _server.UtSocket.UdpSocket;
+            _tcpEndPoint = _serverTCPSocket.RemoteEndPoint;
         }
         private void InitBuffers(int bufferSize)
         {

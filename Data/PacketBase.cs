@@ -30,8 +30,10 @@ namespace AnonSocket.Data
         {
             _index = 0;
             _datas = data;
+            _length = data.Length;
             _packetID = ReadInt32();
             _length = ReadInt32();
+            AnonSocketUtil.Debug($"收到包{_packetID},包长{_length}");
         }
 
         public int ReadInt32()
@@ -79,7 +81,7 @@ namespace AnonSocket.Data
         {
             var buff = Encoding.UTF8.GetBytes(value);
             Write(buff.Length);
-            WriteBytes(buff, 0, buff.Length);
+            Write(buff, 0, buff.Length);
         }
 
         public Vector3 ReadVector3()
@@ -145,12 +147,13 @@ namespace AnonSocket.Data
             _index += numBytes;
             return _index < _datas.Length;
         }
-        protected void WriteBytes(byte[] buff, int start, int len)
+        public void Write(byte[] buff)
         {
-            for (int i = 0; i < len; i++)
-            {
-                _datas[_length + i] = buff[start + i];
-            }
+            Write(buff, 0, buff.Length);
+        }
+        public void Write(byte[] buff, int start, int len)
+        {
+            Array.Copy(buff, start, _datas, _length, len);
             _length += len;
         }
         /// <summary>
@@ -158,7 +161,7 @@ namespace AnonSocket.Data
         /// </summary>
         /// <param name="size">-1 is read reserve</param>
         /// <returns></returns>
-        public byte[] ReadBuffers(int size = -1)
+        public byte[] ReadBytes(int size = -1)
         {
             if (size == -1)
             {
@@ -178,11 +181,7 @@ namespace AnonSocket.Data
         {
             _index = 0;
         }
-        public void SetTCPPacket()
-        {
-            SetPacketID(_packetID << 16);
-        }
-        private unsafe void SetPacketLength(int value)
+        public unsafe void SetPacketLength(int value)
         {
             int TmpValue = *(int*)&value;
             _datas[4] = (byte)TmpValue;
@@ -190,7 +189,7 @@ namespace AnonSocket.Data
             _datas[6] = (byte)(TmpValue >> 16);
             _datas[7] = (byte)(TmpValue >> 24);
         }
-        private unsafe void SetPacketID(int value)
+        public unsafe void SetPacketID(int value)
         {
             int TmpValue = *(int*)&value;
             _datas[0] = (byte)TmpValue;
@@ -201,10 +200,6 @@ namespace AnonSocket.Data
         public bool OnTCPConnect(bool isServer)
         {
             return isServer ? _packetID <= 0 : _packetID < 0;
-        }
-        public int GetNumID()
-        {
-            return Math.Abs(_packetID);
         }
     }
 }

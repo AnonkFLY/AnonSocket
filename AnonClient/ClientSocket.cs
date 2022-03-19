@@ -83,6 +83,7 @@ namespace AnonSocket.AnonClient
         /// <param name="packet"></param>
         public void SendMessage(PacketBase packet)
         {
+            AnonSocketUtil.Debug($"发送包{packet.PacketID},包长{packet.Length}");
             if (packet.OnTCPConnect(false))
             {
                 SendTCPPacket(packet);
@@ -96,7 +97,7 @@ namespace AnonSocket.AnonClient
         {
             try
             {
-                var buffer = packet.ReadBuffers();
+                var buffer = packet.ReadBytes();
                 //AnonSocketUtil.Debug("on send data... use tcp");
                 _utSocket.TcpSocket.BeginSend(buffer, 0, buffer.Length, SocketFlags.None, TCPEndSend, _utSocket.TcpSocket);
             }

@@ -5,16 +5,6 @@ using System.Net.Sockets;
 
 namespace AnonSocket
 {
-    public struct MessageData
-    {
-        public Socket serverSocket;
-        public PacketBase packetData;
-        public MessageData(PacketBase packet,Socket socket)
-        {
-            this.packetData = packet;
-            this.serverSocket = socket;
-        }
-    }
     public class UTSocket : IDisposable
     {
         private Socket _udpSocket;
@@ -67,7 +57,6 @@ namespace AnonSocket
         }
         public void Dispose()
         {
-            AnonSocketUtil.Debug("关闭了服务器！！！！！！！！！！");
             _tcpSocket.Close();
             _udpSocket.Close();
         }
@@ -79,20 +68,20 @@ namespace AnonSocket
         {
             _tcpSocket.Listen(count);
         }
-        public void ConnectToServer(IPAddress ip, AsyncCallback callBack, object state)
+        public IAsyncResult ConnectToServer(IPAddress ip, AsyncCallback callBack, object state)
         {
             IPEndPoint tcpEP = new IPEndPoint(ip, _tcpPort);
             IPEndPoint udpEP = new IPEndPoint(ip, _udpPort);
-            _tcpSocket.BeginConnect(tcpEP, callBack, state);
             //_udpSocket.BeginConnect(udpEP, callBack, state);
             _serverUDPEP = new IPEndPoint(ip, _udpPort);
+            return _tcpSocket.BeginConnect(tcpEP, callBack, state);
         }
-        public void ConnectToServer(ConnectState connect)
+        public IAsyncResult ConnectToServer(ConnectState connect)
         {
             IPEndPoint tcpEP = new IPEndPoint(connect.ip, _tcpPort);
             IPEndPoint udpEP = new IPEndPoint(connect.ip, _udpPort);
-            _tcpSocket.BeginConnect(tcpEP, connect.tcpCallBack, connect.tcpState);
             _tcpSocket.BeginConnect(tcpEP, connect.udpCallBack, connect.udpState);
+            return _tcpSocket.BeginConnect(tcpEP, connect.tcpCallBack, connect.tcpState);
         }
     }
     public class ConnectState
