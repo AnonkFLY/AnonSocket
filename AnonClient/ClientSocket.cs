@@ -72,10 +72,10 @@ namespace AnonSocket.AnonClient
         /// 尝试连接服务器
         /// </summary>
         /// <param name="serverIP">服务器IP</param>
-        public void Connect(IPAddress serverIP)
+        public IAsyncResult Connect(IPAddress serverIP)
         {
             onBeginConnect?.Invoke(serverIP);
-            _utSocket.ConnectToServer(serverIP, OnConnect, _utSocket.TcpSocket);
+            return _utSocket.ConnectToServer(serverIP, OnConnect, _utSocket.TcpSocket);
         }
         /// <summary>
         /// 发送数据包给服务器
