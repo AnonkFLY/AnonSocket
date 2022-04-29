@@ -128,7 +128,7 @@ namespace AnonSocket.Data
         }
         public void Write(bool value)
         {
-            _datas[_index] = (byte)(value ? 1 : 0);
+            _datas[_length] = (byte)(value ? 1 : 0);
             _length++;
         }
         public byte ReadByte()
@@ -139,7 +139,7 @@ namespace AnonSocket.Data
         }
         public void Write(byte value)
         {
-            _datas[_index] = value;
+            _datas[_length] = value;
             _length++;
         }
         protected bool FillBuffer(int numBytes)

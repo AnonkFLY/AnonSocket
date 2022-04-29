@@ -5,7 +5,7 @@ using System.Net.Sockets;
 
 namespace AnonSocket.AnonClient
 {
-    class ClientSocket : IDisposable
+    public class ClientSocket : IDisposable
     {
         private UTSocket _utSocket;
         private PacketBuffer _buffer;
